@@ -1,0 +1,254 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f5f6fa;
+  color: #333;
+}
+
+.app {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin-bottom: 20px;
+  color: #222;
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.toolbar button {
+  padding: 8px 16px;
+  background: #4a6cf7;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.toolbar button:hover {
+  background: #3a5ce5;
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  align-items: center;
+}
+
+.input-row input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.input-row input:focus {
+  outline: none;
+  border-color: #4a6cf7;
+}
+
+.input-row button {
+  padding: 8px 14px;
+  background: #4a6cf7;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.input-row button.cancel {
+  background: #aaa;
+}
+
+.input-row button:hover {
+  opacity: 0.88;
+}
+
+.user-list {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.user-list-header {
+  display: grid;
+  grid-template-columns: 1fr 100px 220px;
+  gap: 10px;
+  padding: 10px 20px;
+  background: #eef0f8;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #666;
+  letter-spacing: 0.05em;
+}
+
+.user-row {
+  display: grid;
+  grid-template-columns: 1fr 100px 220px;
+  gap: 10px;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.user-row:last-child {
+  border-bottom: none;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-name {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.user-meta {
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.user-position {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #555;
+}
+
+.user-row select {
+  padding: 7px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  cursor: pointer;
+  width: 100%;
+}
+
+.user-row select:focus {
+  outline: none;
+  border-color: #4a6cf7;
+}
+
+.empty {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 0.9rem;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.modal h2 {
+  font-size: 1.2rem;
+  padding: 20px 24px 0;
+  color: #222;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 24px;
+}
+
+.modal-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #444;
+}
+
+.modal-body input,
+.modal-body select {
+  padding: 9px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+}
+
+.modal-body input:focus,
+.modal-body select:focus {
+  outline: none;
+  border-color: #4a6cf7;
+}
+
+.required {
+  color: #e53e3e;
+}
+
+.form-error {
+  font-size: 0.85rem;
+  color: #e53e3e;
+  margin-top: -6px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.modal-actions button {
+  padding: 9px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: #4a6cf7;
+  color: white;
+}
+
+.modal-actions button.cancel {
+  background: #eee;
+  color: #555;
+}
+
+.modal-actions button:hover {
+  opacity: 0.88;
+}
