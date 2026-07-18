@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import './App.css';
+import UsersSections, { getShiftRole } from './components/usersSections';
+import ShiftsSection from './components/shiftsSection';
+import UsersForm from './components/usersForm';
+import ShiftForm from './components/shiftForm';
+import { fetchUsersData, fetchShiftsData } from './components/dbCalls';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
 const ROLE_OPTIONS = ['Cook', 'Manager', 'Server'];
@@ -22,23 +27,11 @@ function App() {
   const roleOptions = ROLE_OPTIONS;
 
   const fetchUsers = useCallback(async () => {
-    const response = await fetch(`${API_BASE_URL}/users`);
-    if (!response.ok) {
-      throw new Error('Failed to load users.');
-    }
-    const data = await response.json();
-    setUsers(data);
-    return data;
+    return fetchUsersData(API_BASE_URL, setUsers);
   }, []);
 
   const fetchShifts = useCallback(async () => {
-    const response = await fetch(`${API_BASE_URL}/shifts`);
-    if (!response.ok) {
-      throw new Error('Failed to load shifts.');
-    }
-    const data = await response.json();
-    setShifts(data);
-    return data;
+    return fetchShiftsData(API_BASE_URL, setShifts);
   }, []);
 
   const loadInitialData = useCallback(async () => {
@@ -98,11 +91,6 @@ function App() {
     });
     return lookup;
   }, [users]);
-
-  const formatShiftOption = shift =>
-    `${shift.day} ${shift.start_time}-${shift.end_time} (#${shift.id})`;
-
-  const getShiftRole = shift => shift.role || userRoleById[String(shift.user_id)] || '';
 
   const mapShiftToUser = (userId, shiftId) => {
     const userIdStr = String(userId);
@@ -242,174 +230,43 @@ function App() {
       {isLoading && <p className="empty">Loading data...</p>}
 
       <div className="mapping-grid">
-        <section className="mapping-panel">
-          <h2>Users</h2>
-          {users.length === 0 && <p className="empty">No users yet. Add one above.</p>}
-          {users.map(user => (
-            <div key={user.id} className="mapping-row">
-              <div className="user-info">
-                <span className="user-name">{user.name}</span>
-                <span className="user-meta">{user.role}</span>
-                <span className="user-meta">{user.email || 'No email'}</span>
-                <span className="user-meta">{user.phone || 'No phone'}</span>
-                <span className="user-meta">#{user.id}</span>
-              </div>
-              <select
-                className="mapping-select"
-                value={userShiftMap[String(user.id)] || ''}
-                onChange={event => mapShiftToUser(user.id, event.target.value)}
-              >
-                <option value="">Unassigned</option>
-                {shifts.filter(shift => getShiftRole(shift) === user.role).map(shift => (
-                  <option key={shift.id} value={shift.id}>
-                    {formatShiftOption(shift)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
-        </section>
-
-        <section className="mapping-panel">
-          <h2>Shifts</h2>
-          {shifts.length === 0 && <p className="empty">No shifts yet. Add one above.</p>}
-          {shifts.map(shift => {
-            const mappedUserId = shiftToUserMap[String(shift.id)];
-            const displayRole = getShiftRole(shift) || 'No role';
-            return (
-              <div key={shift.id} className="mapping-row shift-row">
-                <div className="user-info">
-                  <span className="user-name">{shift.day}</span>
-                  <span className="user-meta">{shift.start_time} - {shift.end_time} • #{shift.id} • {displayRole}</span>
-                </div>
-                <span className="mapped-pill">
-                  {mappedUserId ? `Assigned to ${userNameById[mappedUserId] || `User #${mappedUserId}`}` : 'Unassigned to a user'}
-                </span>
-              </div>
-            );
-          })}
-        </section>
+        <UsersSections
+          users={users}
+          shifts={shifts}
+          userShiftMap={userShiftMap}
+          userRoleById={userRoleById}
+          onMapShiftToUser={mapShiftToUser}
+        />
+        <ShiftsSection
+          shifts={shifts}
+          shiftToUserMap={shiftToUserMap}
+          userNameById={userNameById}
+          userRoleById={userRoleById}
+          getShiftRole={getShiftRole}
+        />
       </div>
 
-      {showUserModal && (
-        <div className="modal-overlay" onClick={closeUserModal}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2>Add User</h2>
-            <div className="modal-body">
-              <label>
-                Name <span className="required">*</span>
-                <input
-                  name="name"
-                  placeholder="e.g. Jane Smith"
-                  value={userForm.name}
-                  onChange={handleUserFormChange}
-                  autoFocus
-                />
-              </label>
-              <label>
-                Email <span className="required">*</span>
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="e.g. jane@example.com"
-                  value={userForm.email}
-                  onChange={handleUserFormChange}
-                />
-              </label>
-              <label>
-                Phone <span className="required">*</span>
-                <input
-                  name="phone"
-                  type="tel"
-                  placeholder="e.g. 555-0100"
-                  value={userForm.phone}
-                  onChange={handleUserFormChange}
-                />
-              </label>
-              <label>
-                Role <span className="required">*</span>
-                <select name="role" value={userForm.role} onChange={handleUserFormChange}>
-                  {roleOptions.map(role => <option key={role} value={role}>{role}</option>)}
-                </select>
-              </label>
-              {userFormError && <p className="form-error">{userFormError}</p>}
-            </div>
-            <div className="modal-actions">
-              <button className="cancel" onClick={closeUserModal}>Cancel</button>
-              <button onClick={submitUserForm}>Add User</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <UsersForm
+        showUserModal={showUserModal}
+        closeUserModal={closeUserModal}
+        userForm={userForm}
+        handleUserFormChange={handleUserFormChange}
+        roleOptions={roleOptions}
+        userFormError={userFormError}
+        submitUserForm={submitUserForm}
+      />
 
-      {showShiftModal && (
-        <div className="modal-overlay" onClick={closeShiftModal}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2>Add Shift</h2>
-            <div className="modal-body">
-              <label>
-                Role <span className="required">*</span>
-                <select
-                  name="role"
-                  value={shiftForm.role}
-                  onChange={event => {
-                    const nextRole = event.target.value;
-                    setShiftForm(prev => ({ ...prev, role: nextRole, userId: '' }));
-                  }}
-                  autoFocus
-                >
-                  {roleOptions.map(role => <option key={role} value={role}>{role}</option>)}
-                </select>
-              </label>
-              <label>
-                User <span className="required">*</span>
-                <select
-                  name="userId"
-                  value={shiftForm.userId}
-                  onChange={handleShiftFormChange}
-                >
-                  <option value="">{shiftRoleUsers.length ? 'Select a user' : 'No users for selected role'}</option>
-                  {shiftRoleUsers.map(user => (
-                    <option key={user.id} value={user.id}>{user.name} (#{user.id})</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Day <span className="required">*</span>
-                <input
-                  name="day"
-                  type="date"
-                  value={shiftForm.day}
-                  onChange={handleShiftFormChange}
-                />
-              </label>
-              <label>
-                Start Time <span className="required">*</span>
-                <input
-                  name="startTime"
-                  type="time"
-                  value={shiftForm.startTime}
-                  onChange={handleShiftFormChange}
-                />
-              </label>
-              <label>
-                End Time <span className="required">*</span>
-                <input
-                  name="endTime"
-                  type="time"
-                  value={shiftForm.endTime}
-                  onChange={handleShiftFormChange}
-                />
-              </label>
-              {shiftFormError && <p className="form-error">{shiftFormError}</p>}
-            </div>
-            <div className="modal-actions">
-              <button className="cancel" onClick={closeShiftModal}>Cancel</button>
-              <button onClick={submitShiftForm}>Add Shift</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ShiftForm
+        showShiftModal={showShiftModal}
+        closeShiftModal={closeShiftModal}
+        shiftForm={shiftForm}
+        setShiftForm={setShiftForm}
+        handleShiftFormChange={handleShiftFormChange}
+        roleOptions={roleOptions}
+        shiftRoleUsers={shiftRoleUsers}
+        shiftFormError={shiftFormError}
+        submitShiftForm={submitShiftForm}
+      />
     </div>
   );
 }
