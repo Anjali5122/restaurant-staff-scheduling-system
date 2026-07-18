@@ -249,7 +249,10 @@ function App() {
             <div key={user.id} className="mapping-row">
               <div className="user-info">
                 <span className="user-name">{user.name}</span>
-                <span className="user-meta">{user.role} • {user.email || 'No email'} • {user.phone || 'No phone'} • #{user.id}</span>
+                <span className="user-meta">{user.role}</span>
+                <span className="user-meta">{user.email || 'No email'}</span>
+                <span className="user-meta">{user.phone || 'No phone'}</span>
+                <span className="user-meta">#{user.id}</span>
               </div>
               <select
                 className="mapping-select"
