@@ -58,10 +58,11 @@ class TinyDBManager:
             }
         )
 
-    def add_shift(self, user_id: int, day: str, start_time: str, end_time: str) -> int:
+    def add_shift(self, user_id: int, role: str, day: str, start_time: str, end_time: str) -> int:
         return self.shifts.insert(
             {
                 "user_id": user_id,
+                "role": role,
                 "day": day,
                 "start_time": start_time,
                 "end_time": end_time,
@@ -87,6 +88,7 @@ class UserCreate(BaseModel):
 
 class ShiftCreate(BaseModel):
     user_id: int
+    role: str
     day: str
     start_time: str
     end_time: str
@@ -126,6 +128,7 @@ def add_shift(payload: ShiftCreate) -> dict:
 
     shift_id = db.add_shift(
         user_id=payload.user_id,
+        role=payload.role,
         day=payload.day,
         start_time=payload.start_time,
         end_time=payload.end_time,
@@ -133,6 +136,7 @@ def add_shift(payload: ShiftCreate) -> dict:
     return {
         "id": shift_id,
         "user_id": payload.user_id,
+        "role": payload.role,
         "day": payload.day,
         "start_time": payload.start_time,
         "end_time": payload.end_time,
