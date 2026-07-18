@@ -78,6 +78,9 @@ class TinyDBManager:
     def get_shifts(self) -> list[dict]:
         return [{"id": doc.doc_id, **dict(doc)} for doc in self.shifts.all()]
 
+    def close(self) -> None:
+        self.db.close()
+
 
 class UserCreate(BaseModel):
     name: str
