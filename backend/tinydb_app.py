@@ -7,6 +7,11 @@ Run:
     uvicorn tinydb_app:app --reload
 """
 
+import os
+from json import JSONDecodeError
+
+import json
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -14,10 +19,34 @@ from tinydb import TinyDB
 
 
 class TinyDBManager:
-    def __init__(self, db_path: str = "staff_db.json") -> None:
+    def __init__(self, db_path: str = "backend-data/staff_db.json") -> None:
+        db_dir = os.path.dirname(db_path)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
+        self._prepare_db_file(db_path)
         self.db = TinyDB(db_path)
         self.users = self.db.table("users")
         self.shifts = self.db.table("shifts")
+
+    @staticmethod
+    def _prepare_db_file(db_path: str) -> None:
+        if not os.path.exists(db_path):
+            return
+
+        with open(db_path, "r+", encoding="utf-8") as db_file:
+            raw_contents = db_file.read().strip()
+            if not raw_contents:
+                db_file.seek(0)
+                db_file.write("{}")
+                db_file.truncate()
+                return
+
+            try:
+                json.loads(raw_contents)
+            except JSONDecodeError:
+                db_file.seek(0)
+                db_file.write("{}")
+                db_file.truncate()
 
     def add_user(self, name: str, email: str, phone: str, role: str) -> int:
         return self.users.insert(
@@ -64,7 +93,7 @@ class ShiftCreate(BaseModel):
 
 
 app = FastAPI(title="Restaurant Staff Scheduling API")
-db = TinyDBManager()
+db = TinyDBManager(os.getenv("TINYDB_PATH", "backend-data/staff_db.json"))
 
 app.add_middleware(
     CORSMiddleware,

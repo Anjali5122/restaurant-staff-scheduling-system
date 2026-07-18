@@ -1,0 +1,11 @@
+services:
+  backend:
+    build:
+      context: .
+    image: restaurant-staff-backend
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      TINYDB_PATH: /data/staff_db.json
+    volumes:
+      - ./backend-data:/data
