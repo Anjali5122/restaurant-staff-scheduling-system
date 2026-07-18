@@ -91,8 +91,18 @@ function App() {
     return lookup;
   }, [users]);
 
+  const userRoleById = useMemo(() => {
+    const lookup = {};
+    users.forEach(user => {
+      lookup[String(user.id)] = user.role;
+    });
+    return lookup;
+  }, [users]);
+
   const formatShiftOption = shift =>
     `${shift.day} ${shift.start_time}-${shift.end_time} (#${shift.id})`;
+
+  const getShiftRole = shift => shift.role || userRoleById[String(shift.user_id)] || '';
 
   const mapShiftToUser = (userId, shiftId) => {
     const userIdStr = String(userId);
@@ -185,6 +195,7 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: Number(shiftForm.userId),
+          role: shiftForm.role.trim(),
           day: shiftForm.day.trim(),
           start_time: shiftForm.startTime.trim(),
           end_time: shiftForm.endTime.trim(),
@@ -196,7 +207,11 @@ function App() {
         throw new Error(errorData.detail || 'Failed to add shift.');
       }
 
-      await fetchShifts();
+      const createdShift = await response.json();
+      const refreshedShifts = await fetchShifts();
+      if (refreshedShifts.some(shift => String(shift.id) === String(createdShift.id))) {
+        mapShiftToUser(createdShift.user_id, createdShift.id);
+      }
       closeShiftModal();
     } catch (error) {
       setShiftFormError(error.message || 'Failed to add shift.');
@@ -242,7 +257,7 @@ function App() {
                 onChange={event => mapShiftToUser(user.id, event.target.value)}
               >
                 <option value="">Unassigned</option>
-                {shifts.map(shift => (
+                {shifts.filter(shift => getShiftRole(shift) === user.role).map(shift => (
                   <option key={shift.id} value={shift.id}>
                     {formatShiftOption(shift)}
                   </option>
@@ -257,11 +272,12 @@ function App() {
           {shifts.length === 0 && <p className="empty">No shifts yet. Add one above.</p>}
           {shifts.map(shift => {
             const mappedUserId = shiftToUserMap[String(shift.id)];
+            const displayRole = getShiftRole(shift) || 'No role';
             return (
               <div key={shift.id} className="mapping-row shift-row">
                 <div className="user-info">
                   <span className="user-name">{shift.day}</span>
-                  <span className="user-meta">{shift.start_time} - {shift.end_time} • #{shift.id}</span>
+                  <span className="user-meta">{shift.start_time} - {shift.end_time} • #{shift.id} • {displayRole}</span>
                 </div>
                 <span className="mapped-pill">
                   {mappedUserId ? `Assigned to ${userNameById[mappedUserId] || `User #${mappedUserId}`}` : 'Unassigned to a user'}
