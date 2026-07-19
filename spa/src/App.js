@@ -23,6 +23,7 @@ function App() {
   const [showShiftModal, setShowShiftModal] = useState(false);
   const [shiftForm, setShiftForm] = useState(EMPTY_SHIFT_FORM);
   const [shiftFormError, setShiftFormError] = useState('');
+  const [assignmentErrors, setAssignmentErrors] = useState({});
 
   const roleOptions = ROLE_OPTIONS;
 
@@ -54,9 +55,11 @@ function App() {
     const validUserIds = new Set(users.map(user => String(user.id)));
     const validShiftIds = new Set(shifts.map(shift => String(shift.id)));
 
-    Object.entries(userShiftMap).forEach(([userId, shiftId]) => {
-      if (validUserIds.has(userId) && validShiftIds.has(String(shiftId))) {
-        nextMap[userId] = String(shiftId);
+    Object.entries(userShiftMap).forEach(([userId, shiftIds]) => {
+      if (!validUserIds.has(userId)) return;
+      const filteredShiftIds = (shiftIds || []).filter(shiftId => validShiftIds.has(String(shiftId)));
+      if (filteredShiftIds.length > 0) {
+        nextMap[userId] = filteredShiftIds;
       }
     });
 
@@ -68,13 +71,21 @@ function App() {
 
   const shiftToUserMap = useMemo(() => {
     const reverse = {};
-    Object.entries(userShiftMap).forEach(([userId, shiftId]) => {
-      if (shiftId) {
+    Object.entries(userShiftMap).forEach(([userId, shiftIds]) => {
+      (shiftIds || []).forEach(shiftId => {
         reverse[String(shiftId)] = String(userId);
-      }
+      });
     });
     return reverse;
   }, [userShiftMap]);
+
+  const shiftsById = useMemo(() => {
+    const lookup = {};
+    shifts.forEach(shift => {
+      lookup[String(shift.id)] = shift;
+    });
+    return lookup;
+  }, [shifts]);
 
   const userNameById = useMemo(() => {
     const lookup = {};
@@ -92,27 +103,66 @@ function App() {
     return lookup;
   }, [users]);
 
-  const mapShiftToUser = (userId, shiftId) => {
+  const clearAssignmentError = userIdStr => {
+    setAssignmentErrors(prev => {
+      if (!prev[userIdStr]) return prev;
+      const next = { ...prev };
+      delete next[userIdStr];
+      return next;
+    });
+  };
+
+  const assignShiftToUser = (userId, shiftId) => {
     const userIdStr = String(userId);
     const shiftIdStr = String(shiftId);
 
     setUserShiftMap(prev => {
-      const next = { ...prev };
-
-      if (!shiftIdStr) {
-        delete next[userIdStr];
-        return next;
-      }
-
-      Object.keys(next).forEach(existingUserId => {
-        if (next[existingUserId] === shiftIdStr) {
-          delete next[existingUserId];
-        }
+      const next = {};
+      Object.entries(prev).forEach(([existingUserId, shiftIds]) => {
+        next[existingUserId] = existingUserId === userIdStr
+          ? [...shiftIds]
+          : shiftIds.filter(id => id !== shiftIdStr);
       });
 
-      next[userIdStr] = shiftIdStr;
+      const currentForUser = next[userIdStr] || [];
+      if (!currentForUser.includes(shiftIdStr)) {
+        next[userIdStr] = [...currentForUser, shiftIdStr];
+      }
       return next;
     });
+  };
+
+  const toggleShiftAssignment = (userId, shiftId, isChecked) => {
+    const userIdStr = String(userId);
+    const shiftIdStr = String(shiftId);
+
+    if (!isChecked) {
+      setUserShiftMap(prev => ({
+        ...prev,
+        [userIdStr]: (prev[userIdStr] || []).filter(id => id !== shiftIdStr),
+      }));
+      clearAssignmentError(userIdStr);
+      return;
+    }
+
+    const targetShift = shiftsById[shiftIdStr];
+    if (!targetShift) return;
+
+    const existingForUser = userShiftMap[userIdStr] || [];
+    const conflictingShift = existingForUser
+      .map(id => shiftsById[id])
+      .find(shift => shift && shift.day === targetShift.day);
+
+    if (conflictingShift) {
+      setAssignmentErrors(prev => ({
+        ...prev,
+        [userIdStr]: `Already assigned to a shift on ${targetShift.day} (#${conflictingShift.id}). Shifts must be on different days.`,
+      }));
+      return;
+    }
+
+    clearAssignmentError(userIdStr);
+    assignShiftToUser(userId, shiftId);
   };
 
   const openUserModal = () => {
@@ -198,7 +248,7 @@ function App() {
       const createdShift = await response.json();
       const refreshedShifts = await fetchShifts();
       if (refreshedShifts.some(shift => String(shift.id) === String(createdShift.id))) {
-        mapShiftToUser(createdShift.user_id, createdShift.id);
+        assignShiftToUser(createdShift.user_id, createdShift.id);
       }
       closeShiftModal();
     } catch (error) {
@@ -235,7 +285,8 @@ function App() {
           shifts={shifts}
           userShiftMap={userShiftMap}
           userRoleById={userRoleById}
-          onMapShiftToUser={mapShiftToUser}
+          onToggleShiftAssignment={toggleShiftAssignment}
+          assignmentErrors={assignmentErrors}
         />
         <ShiftsSection
           shifts={shifts}
