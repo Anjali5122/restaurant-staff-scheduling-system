@@ -1,4 +1,5 @@
 # restaurant-staff-scheduling-system
+<img width="861" height="837" alt="Screenshot 2026-07-19 at 12 03 02 AM" src="https://github.com/user-attachments/assets/c26ace6f-490c-462d-a113-91eaa736cdee" />
 
 ## Frontend
 
